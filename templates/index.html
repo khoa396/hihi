@@ -3,59 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Get Key TMG</title>
+    <title>Auto Key Generator</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #1a1a2e; color: #fff; margin: 0; }
-        .container { text-align: center; background: #16213e; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #0f3460; max-width: 400px; width: 90%; }
-        h2 { margin-bottom: 20px; color: #e94560; }
-        button {
-            padding: 12px 25px; font-size: 16px; cursor: pointer; font-weight: bold;
-            background-color: #e94560; color: white; border: none; border-radius: 8px;
-            transition: transform 0.2s, background 0.3s; width: 100%;
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; background-color: #121212; color: #e0e0e0; margin: 0; 
         }
-        button:hover { background-color: #c12c45; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
-        button:disabled { background-color: #555; cursor: not-allowed; transform: none; }
-        #result { margin-top: 25px; min-height: 50px; word-break: break-all; }
-        .key-text { color: #4cd137; font-size: 20px; font-weight: bold; padding: 10px; border: 1px dashed #4cd137; border-radius: 5px; display: inline-block; margin-top: 10px; }
-        .error { color: #ff6b6b; }
+        .container { 
+            text-align: center; background: #1e1e1e; padding: 3rem; 
+            border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
+            border: 1px solid #333; max-width: 500px; width: 90%; 
+        }
+        h2 { color: #bb86fc; margin-bottom: 10px; }
+        
+        /* Style cho Key thành công */
+        .key-box {
+            margin-top: 20px; padding: 20px;
+            background-color: #2c2c2c; border: 2px dashed #03dac6;
+            border-radius: 8px;
+        }
+        .key-label { font-size: 14px; color: #aaa; margin-bottom: 5px; display: block;}
+        .key-value { 
+            font-size: 28px; font-weight: bold; color: #03dac6; 
+            word-break: break-all; letter-spacing: 1px;
+        }
+        
+        /* Style cho Lỗi */
+        .error-box {
+            margin-top: 20px; padding: 15px;
+            background-color: #3e1b1b; border: 1px solid #cf6679;
+            border-radius: 8px; color: #cf6679;
+        }
+        
+        .footer { margin-top: 30px; font-size: 12px; color: #555; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>TMG Key Generator</h2>
-    <p style="color: #a0a0a0; font-size: 14px; margin-bottom: 20px;">Bấm nút dưới để lấy key tự động</p>
-    <button id="getKeyBtn" onclick="getKey()">LẤY KEY NGAY</button>
-    <div id="result"></div>
+    <h2>Hệ Thống Get Key Tự Động</h2>
+
+    {% if key %}
+        <div class="key-box">
+            <span class="key-label">Key của bạn là:</span>
+            <div class="key-value">{{ key }}</div>
+            <p style="font-size: 13px; color: #888; margin-top: 10px;">
+                Key đã được tạo tự động. F5 sẽ không tạo key mới.
+            </p>
+        </div>
+    {% elif error %}
+        <div class="error-box">
+            <strong>⚠️ THÔNG BÁO</strong><br>
+            {{ error }}
+        </div>
+    {% else %}
+        <p>Đang xử lý...</p>
+    {% endif %}
+
+    <div class="footer">Powered by Python & Flask on Vercel</div>
 </div>
-
-<script>
-    async function getKey() {
-        const btn = document.getElementById('getKeyBtn');
-        const resultDiv = document.getElementById('result');
-
-        btn.disabled = true;
-        btn.innerText = "Đang kết nối...";
-        resultDiv.innerHTML = "";
-
-        try {
-            const response = await fetch('/get-key', { method: 'POST' });
-            const data = await response.json();
-
-            if (data.success) {
-                resultDiv.innerHTML = `<div>Key thành công:</div><div class="key-text">${data.key}</div>`;
-            } else {
-                resultDiv.innerHTML = `<span class="error">Lỗi: ${data.error}</span>`;
-            }
-        } catch (error) {
-            resultDiv.innerHTML = `<span class="error">Lỗi kết nối đến server!</span>`;
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "LẤY KEY NGAY";
-        }
-    }
-</script>
 
 </body>
 </html>
