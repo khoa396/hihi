@@ -1,63 +1,42 @@
-from flask import Flask, render_template, request, session, redirect, url_for
-import requests
-from urllib.parse import urlparse, parse_qs
-import os
+from flask import Flask, render_template, jsonify
+from urllib.parse import quote
 
 app = Flask(__name__)
 
-# CẤU HÌNH QUAN TRỌNG
-# Token bí mật để xác thực từ Link4m
-SECRET_TOKEN = "chuan-men-tmg-2026" 
-
-# Khóa bí mật để mã hóa Session (bắt buộc phải có để lưu cookie)
-# Bạn có thể gõ bừa một chuỗi ký tự dài ngẫu nhiên
-app.secret_key = 'chuoi-ky-tu-ngau-nhien-bao-mat-cuc-cao-tmg-tool'
+# CẤU HÌNH API KEY (Giấu ở đây, không lộ ra HTML)
+LINK4M_API = "67fe08df2741353b9475dd73"
+LAYMA_TOKEN = "b8b60726e4ebf47ffe41df8a8d96c869"
+TARGET_URL = "https://tmggamecheat.fun/GETKEY/noapi.php"
 
 @app.route('/')
 def home():
-    # TRƯỜNG HỢP 1: Người dùng có Session (đã vượt link trước đó)
-    # Nếu trong cookie đã lưu key, hiển thị lại key đó (F5 không bị mất, không tạo mới)
-    if 'saved_key' in session:
-        return render_template('index.html', key=session['saved_key'])
+    return render_template('index.html')
 
-    # TRƯỜNG HỢP 2: Người dùng mới vào từ Link Rút Gọn (có Token trên URL)
-    user_token = request.args.get('auth')
+@app.route('/generate-link', methods=['POST'])
+def generate_link():
+    try:
+        # --- BƯỚC 1: TẠO LINK LỚP TRONG (LINK4M) ---
+        # Mã hóa target url để nó trở thành 1 tham số an toàn
+        # Ví dụ: https://... trở thành https%3A%2F%2F...
+        target_encoded = quote(TARGET_URL)
+        
+        # Tạo link Link4m hoàn chỉnh
+        # Link4m Quick Link format: https://link4m.co/st?api={API}&url={TARGET}
+        link4m_url = f"https://link4m.co/st?api={LINK4M_API}&url={target_encoded}"
 
-    if user_token == SECRET_TOKEN:
-        # Token hợp lệ -> Tiến hành lấy Key mới
-        try:
-            target_url = "https://tmggamecheat.fun/GETKEY/noapi.php"
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-            
-            response = requests.get(target_url, headers=headers, timeout=15, allow_redirects=True)
-            final_url = response.url
-            
-            parsed_url = urlparse(final_url)
-            query_params = parse_qs(parsed_url.query)
-            key_value = query_params.get('key', [None])[0]
-            
-            if key_value:
-                # LƯU KEY VÀO SESSION (COOKIE)
-                session['saved_key'] = key_value
-                
-                # QUAN TRỌNG: Chuyển hướng về trang chủ để XÓA URL PARAM (ẩn token)
-                return redirect(url_for('home'))
-            else:
-                return render_template('index.html', error="Lỗi: Web nguồn không trả về key.")
-                
-        except Exception as e:
-            return render_template('index.html', error=f"Lỗi kết nối: {str(e)}")
+        # --- BƯỚC 2: TẠO LINK LỚP NGOÀI (LAYMA) ---
+        # Bây giờ link4m_url lại đóng vai trò là "target" của Layma
+        # Nên ta phải mã hóa link4m_url một lần nữa
+        link4m_encoded = quote(link4m_url)
 
-    # TRƯỜNG HỢP 3: Truy cập trực tiếp (không có Token, không có Session)
-    return render_template('index.html', error="Vui lòng truy cập qua link rút gọn để lấy Key.")
+        # Tạo link Layma hoàn chỉnh
+        # Layma Quick Link format: https://api.layma.net/.../quicklink?tokenUser={TOKEN}&url={LINK4M_ENCODED}
+        final_link = f"https://api.layma.net/api/admin/shortlink/quicklink?tokenUser={LAYMA_TOKEN}&url={link4m_encoded}"
 
-# Route phụ để Reset (nếu người dùng muốn lấy Key mới)
-@app.route('/reset')
-def reset_session():
-    session.pop('saved_key', None)
-    return redirect(url_for('home'))
+        return jsonify({'success': True, 'url': final_link})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
